@@ -2,7 +2,7 @@ var express = require("express");
 var User = require("../models/users");
 var router = express.Router();
 
-//post user
+//post user to database
 router.post("/users", async(req, res) => {
     var user = new User(req.body);
     try {
