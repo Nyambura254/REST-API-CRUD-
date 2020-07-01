@@ -19,7 +19,7 @@ router.get("/users", async(req, res) => {
         var users = await User.find({});
         res.send(users); //we pass oour function parameter
     } catch (err) {
-        res.status(500).send(err);
+        res.status(500).send(err); //500 is for server error
     }
 });
 
