@@ -1,16 +1,25 @@
-var mongoose = require("mongoose");
+const mongoose = require('mongoose')
 
-//create task model structure
-var Task = mongoose.model("Task",{
-    description:{
+// Create the task model structure
+var taskSchema = new mongoose.Schema({
+    description: {
         type: String,
         required: true,
         trim: true
     },
-    completed:{
+    completed: {
         type: Boolean,
         default: false
+    },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
     }
-    })
+}, {
+    timestamps: true
+});
 
-    module.exports = Task;
+var Task = mongoose.model('Task', taskSchema);
+
+module.exports = Task;
