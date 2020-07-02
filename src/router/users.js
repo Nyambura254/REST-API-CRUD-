@@ -1,77 +1,84 @@
-var express = require("express");
-var User = require("../models/users");
-var router = express.Router();
+var express = require('express')
+var User = require('../models/user');
+var auth = require('../middleware/auth');
+var router = new express.Router();
 
-//post user to database
-router.post("/users", async(req, res) => {
+router.post('/users', async(req, res) => {
     var user = new User(req.body);
+
     try {
         await user.save();
-        res.status(201).send(user);
-    } catch (e) {
-        res.status(400).send(e);
-    }
-});
-
-//get all users
-router.get("/users", async(req, res) => {
-    try {
-        var users = await User.find({});
-        res.send(users); //we pass oour function parameter
+        var token = await user.generateToken();
+        res.status(201).send({ user, token });
     } catch (err) {
-        res.status(500).send(err); //500 is for server error
+        res.status(400).send(err);
     }
 });
 
-//get one user
-router.get("/users/:id", async(req, res) => {
-    var id = req.params.id;
+router.post('/users/login', async(req, res) => {
     try {
-        var user = await User.findById(id);
-        if (!user) {
-            return res.status(400).send();
-        }
-        res.send(user);
-    } catch (e) {
-        res.status(500).send(e);
+        var user = await User.findByCredentials(req.body.email, req.body.password);
+        var token = await user.generateToken()
+        res.send({ user, token });
+    } catch (err) {
+        res.status(400).send(err);
     }
 });
 
-//update
-router.patch("/users/:id", async(req, res) => {
-    var updates = Object.keys(req.body);
-    var allowedUpdates = ["name", "password", "email", "age"];
-    var isValidOperation = updates.every((update) =>
-        allowedUpdates.includes(update)
-    );
-    if (!isValidOperation) {
-        return res.status(400).send({ error: "invalid Updates" });
-    }
+router.post('/users/logout', auth, async(req, res) => {
     try {
-        var user = await User.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true,
+        req.user.tokens = req.user.tokens.filter((token) => {
+            return token.token !== req.token;
         });
-        if (!user) {
-            return res.status(404).send();
-        }
-        res.send(user);
-    } catch (e) {
-        res.status(400).send(e);
+        await req.user.save();
+
+        res.send();
+    } catch (err) {
+        res.status(500).send(err);
     }
 });
 
-//delete user
-router.delete("/users/:id", async(req, res) => {
-    var id = req.params.id;
+router.post('/users/logoutAll', auth, async(req, res) => {
     try {
-        var users = await User.findByIdAndDelete(id);
-        if (!users) {
-            res.status(404).send();
-        }
-        res.send(users);
-    } catch (e) {
-        res.status(500).send(e);
+        req.user.tokens = []
+        await req.user.save();
+
+        res.send();
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+router.get('/users/me', auth, async(req, res) => {
+    res.send(req.user);
+});
+
+// update a user
+router.patch('/users/me', auth, async(req, res) => {
+    var updates = Object.keys(req.body);
+    var allowedUpdates = ['name', 'email', 'password', 'age'];
+    var isValidOperation = updates.every((update) => allowedUpdates.includes(update));
+
+    if (!isValidOperation) {
+        return res.status(400).send({ error: 'Invalid updates' });
+    }
+
+    try {
+        updates.forEach((update) => req.user[update] = req.body[update]);
+        await req.user.save();
+        res.send(req.user);
+    } catch (err) {
+        res.status(400).send(err);
+    }
+});
+
+// delete a user
+router.delete('/users/me', auth, async(req, res) => {
+    try {
+        await req.user.remove()
+        res.send(req.user);
+    } catch (err) {
+        res.status(500).send(err);
     }
 });
 
