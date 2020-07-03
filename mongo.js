@@ -8,6 +8,8 @@ if (err) {
 return console.log('unable to connect');
 }
 var db = client.db(databaseName); //look at our database name
+
+//insert our collections in user below
 // db.collection('users').insertMany([{
 //     name: 'jayden',
 //     age: 36,
