@@ -17,8 +17,8 @@ var db = client.db(databaseName); //look at our database name
 //     if (err) {
 //         return console.log('unable to connect');
 //     }Woman1984
-description: 'coding',
-competed: false,
+//description: 'coding',
+//competed: false,
 
 }, {
 
